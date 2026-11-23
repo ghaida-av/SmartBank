@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SmartBank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Fraunces:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef3f4;--surface:#fff;--ink:#12262b;--mute:#5b7075;--line:#d5e0e2;--brand:#0b4a54;--brand-ink:#fff;--accent:#d98a0b;--ok:#1d7a4f;--bad:#b3362b;--chip:#e3eef0;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1a1d;--surface:#14262a;--ink:#e6f0f1;--mute:#93aaae;--line:#264047;--brand:#5fc0cf;--brand-ink:#06242a;--accent:#f0b24a;--ok:#5fd09a;--bad:#ff8e82;--chip:#1c3338}}
+:root[data-theme="dark"]{--bg:#0d1a1d;--surface:#14262a;--ink:#e6f0f1;--mute:#93aaae;--line:#264047;--brand:#5fc0cf;--brand-ink:#06242a;--accent:#f0b24a;--ok:#5fd09a;--bad:#ff8e82;--chip:#1c3338}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;margin:0}
+.top{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--brand);color:var(--brand-ink);flex-wrap:wrap}
+.top b{font:600 20px Fraunces,Georgia,serif;margin-right:auto}
+.top button{background:transparent;color:inherit;border:1px solid currentColor;border-radius:6px;padding:5px 10px;cursor:pointer;font:inherit}
+nav{display:flex;gap:4px;padding:10px 20px 0;overflow-x:auto;border-bottom:1px solid var(--line);background:var(--surface)}
+nav button{border:0;background:none;color:var(--mute);padding:10px 14px;cursor:pointer;font:500 15px inherit;border-bottom:3px solid transparent;white-space:nowrap}
+nav button.on{color:var(--ink);border-color:var(--accent)}
+main{max-width:980px;margin:0 auto;padding:20px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.big{font:600 28px Fraunces,Georgia,serif;font-variant-numeric:tabular-nums}
+.mute{color:var(--mute);font-size:13px}
+.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);font-size:14px;white-space:nowrap}
+th{color:var(--mute);font-weight:500}
+label{display:block;font-size:13px;color:var(--mute);margin:10px 0 4px}
+input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+.btn{background:var(--brand);color:var(--brand-ink);border:0;border-radius:6px;padding:9px 16px;cursor:pointer;font:500 15px inherit;margin-top:14px}
+.btn.sm{padding:4px 10px;margin:0 4px 0 0;font-size:13px}
+.btn.ghost{background:var(--chip);color:var(--ink)}
+.btn.bad{background:var(--bad);color:#fff}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.tag{display:inline-block;padding:2px 8px;border-radius:99px;background:var(--chip);font-size:12px}
+.tag.ok{color:var(--ok)}.tag.bad{color:var(--bad)}.tag.wait{color:var(--accent)}
+.toast{padding:10px 14px;border-radius:8px;margin-bottom:14px;background:var(--chip);border-left:4px solid var(--accent)}
+.toast.err{border-color:var(--bad)}.toast.good{border-color:var(--ok)}
+.login{max-width:420px;margin:8vh auto;padding:0 20px}
+.login h1{font-size:34px;margin-bottom:6px}
+.sp{display:flex;gap:10px}.sp>*{flex:1}
+h2{font-size:22px;margin:22px 0 10px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+var fm=function(n){return n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})};
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
+var DAILY=20000,APPROVE=10000,RATE=0.09,OTP="123456";
+var D={
+ cust:[{id:1,name:"Aisha Rahman",kyc:"Verified",frozen:false},{id:2,name:"Omar Haddad",kyc:"Verified",frozen:false},{id:3,name:"Lina Farouk",kyc:"Pending",frozen:false}],
+ acc:[{no:"SB100001",cid:1,type:"Savings",bal:42500},{no:"SB100002",cid:1,type:"Current",bal:8300.5},{no:"SB100003",cid:2,type:"Current",bal:15200},{no:"SB100004",cid:3,type:"Savings",bal:500}],
+ tx:[{d:"2026-11-20",from:"SB100003",to:"SB100002",amt:1200,note:"Rent share"},{d:"2026-11-21",from:"SB100001",to:"SB100003",amt:450,note:"Dinner"}],
+ loans:[{id:1,cid:2,amt:30000,m:24,st:"Approved"}],
+ pend:[],audit:[],nextAcc:100005,nextCust:4,nextLoan:2,nextPend:1
+};
+var S={user:null,role:null,tab:"",msg:null,step:0};
+var today=function(){return new Date().toISOString().slice(0,10)};
+function log(a){D.audit.unshift({t:new Date().toLocaleTimeString(),who:S.role==="staff"?"Staff":(S.user?S.user.name:"System"),a:a})}
+function toast(t,k){S.msg={t:t,k:k||""};render()}
+function accOf(no){return D.acc.find(function(a){return a.no===no})}
+function custOf(id){return D.cust.find(function(c){return c.id===id})}
+function myAcc(){return D.acc.filter(function(a){return S.user&&a.cid===S.user.id})}
+function emi(p,m){var r=RATE/12;return p*r*Math.pow(1+r,m)/(Math.pow(1+r,m)-1)}
+function sentToday(cid){var mine=D.acc.filter(function(a){return a.cid===cid}).map(function(a){return a.no});return D.tx.filter(function(t){return t.d===today()&&mine.indexOf(t.from)>-1}).reduce(function(s,t){return s+t.amt},0)}
+function exec(from,to,amt,note){accOf(from).bal-=amt;accOf(to).bal+=amt;D.tx.unshift({d:today(),from:from,to:to,amt:amt,note:note||"Transfer"})}
+
+/* auth */
+function pickRole(r){S.role=r;S.step=1;S.msg=null;render()}
+function verify(){
+ if(document.getElementById("otp").value!==OTP){return toast("That code is wrong. Use 123456 for this demo.","err")}
+ S.user=S.role==="staff"?{id:0,name:"Branch officer"}:custOf(1);
+ S.tab=S.role==="staff"?"Overview":"Accounts";S.msg=null;log("Signed in with MFA");render();
+}
+function signOut(){S.user=null;S.role=null;S.step=0;S.msg=null;render()}
+
+/* customer actions */
+function doTransfer(){
+ var c=custOf(S.user.id),from=document.getElementById("from").value,to=document.getElementById("to").value.trim().toUpperCase();
+ var amt=parseFloat(document.getElementById("amt").value),note=document.getElementById("note").value.trim();
+ if(c.frozen)return toast("Your profile is frozen. Contact your branch.","err");
+ if(c.kyc!=="Verified")return toast("Identity check is pending. Transfers open once KYC is verified.","err");
+ if(!accOf(to))return toast("Account "+esc(to)+" was not found. Check the number and try again.","err");
+ if(to===from)return toast("Choose a different destination account.","err");
+ if(!(amt>0))return toast("Enter an amount above zero.","err");
+ if(accOf(from).bal<amt)return toast("Insufficient funds in "+from+".","err");
+ if(sentToday(c.id)+amt>DAILY)return toast("This would pass your daily limit of AED "+fm(DAILY)+".","err");
+ if(amt>=APPROVE){D.pend.push({id:D.nextPend++,from:from,to:to,amt:amt,note:note,st:"Pending"});log("Large transfer of AED "+fm(amt)+" sent for approval");return toast("Transfers of AED "+fm(APPROVE)+" or more need a second approval. Sent to the branch.","good")}
+ exec(from,to,amt,note);log("Transfer AED "+fm(amt)+" "+from+" to "+to);toast("Sent AED "+fm(amt)+" to "+to+". A confirmation SMS was queued.","good");
+}
+function calcEmi(){var p=parseFloat(document.getElementById("lamt").value)||0,m=parseInt(document.getElementById("lm").value);document.getElementById("emi").textContent=p>0?"AED "+fm(emi(p,m))+" per month at "+(RATE*100)+"% a year":"Enter an amount to see the monthly payment."}
+function applyLoan(){
+ var p=parseFloat(document.getElementById("lamt").value),m=parseInt(document.getElementById("lm").value);
+ if(!(p>=1000))return toast("Minimum loan is AED 1,000.","err");
+ if(custOf(S.user.id).kyc!=="Verified")return toast("Loans open once KYC is verified.","err");
+ D.loans.push({id:D.nextLoan++,cid:S.user.id,amt:p,m:m,st:"Pending"});log("Loan application AED "+fm(p));toast("Loan application sent for approval.","good");
+}
+
+/* staff actions */
+function regCust(){
+ var n=document.getElementById("cn").value.trim(),dep=parseFloat(document.getElementById("cd").value)||0;
+ if(!n)return toast("Enter the customer’s full name.","err");
+ var c={id:D.nextCust++,name:n,kyc:"Pending",frozen:false};D.cust.push(c);
+ D.acc.push({no:"SB"+D.nextAcc++,cid:c.id,type:"Savings",bal:dep});log("Registered "+n);toast(n+" registered. Verify their ID to activate transfers.","good");
+}
+function kyc(id){custOf(id).kyc="Verified";log("KYC verified for "+custOf(id).name);toast("KYC verified.","good")}
+function freeze(id){var c=custOf(id);c.frozen=!c.frozen;log((c.frozen?"Froze ":"Unfroze ")+c.name);render()}
+function decideTx(id,ok){
+ var p=D.pend.find(function(x){return x.id===id});
+ if(ok){if(accOf(p.from).bal<p.amt){p.st="Rejected";return toast("Approval failed: balance is now too low.","err")}exec(p.from,p.to,p.amt,p.note||"Approved transfer");p.st="Approved"}else p.st="Rejected";
+ log((ok?"Approved":"Rejected")+" transfer #"+id);render();
+}
+function decideLoan(id,ok){
+ var l=D.loans.find(function(x){return x.id===id});l.st=ok?"Approved":"Rejected";
+ if(ok){var a=D.acc.find(function(x){return x.cid===l.cid});a.bal+=l.amt;D.tx.unshift({d:today(),from:"LOAN",to:a.no,amt:l.amt,note:"Loan disbursed"})}
+ log((ok?"Approved":"Rejected")+" loan #"+id);render();
+}
+
+/* views */
+function tag(s){var k=s==="Approved"||s==="Verified"?"ok":s==="Rejected"?"bad":"wait";return '<span class="tag '+k+'">'+s+'</span>'}
+function txTable(list){
+ if(!list.length)return '<p class="mute">No transactions yet. Send a transfer to see it here.</p>';
+ return '<div class="wrap"><table><tr><th>Date</th><th>From</th><th>To</th><th>Note</th><th>Amount (AED)</th></tr>'+list.map(function(t){return '<tr><td>'+t.d+'</td><td>'+t.from+'</td><td>'+t.to+'</td><td>'+esc(t.note)+'</td><td>'+fm(t.amt)+'</td></tr>'}).join("")+'</table></div>';
+}
+var V={
+ Accounts:function(){
+  var a=myAcc(),nos=a.map(function(x){return x.no}),tot=a.reduce(function(s,x){return s+x.bal},0);
+  return '<div class="grid"><div class="card"><div class="mute">Total balance</div><div class="big">AED '+fm(tot)+'</div><div class="mute">Daily transfer room: AED '+fm(Math.max(0,DAILY-sentToday(S.user.id)))+'</div></div>'+
+  a.map(function(x){return '<div class="card"><div class="mute">'+x.type+' · '+x.no+'</div><div class="big">AED '+fm(x.bal)+'</div></div>'}).join("")+'</div>'+
+  '<h2>Recent activity</h2><div class="card">'+txTable(D.tx.filter(function(t){return nos.indexOf(t.from)>-1||nos.indexOf(t.to)>-1}))+'</div>';
+ },
+ Transfer:function(){
+  return '<div class="card" style="max-width:480px"><h2 style="margin-top:0">Send money</h2><label for="from">From</label><select id="from">'+myAcc().map(function(a){return '<option value="'+a.no+'">'+a.type+' '+a.no+' (AED '+fm(a.bal)+')</option>'}).join("")+'</select>'+
+  '<label for="to">To account number</label><input id="to" placeholder="e.g. SB100003" autocomplete="off"><label for="amt">Amount (AED)</label><input id="amt" type="number" min="0" step="0.01"><label for="note">Note</label><input id="note" maxlength="40">'+
+  '<button class="btn" onclick="doTransfer()">Send transfer</button><p class="mute">Daily limit AED '+fm(DAILY)+'. Transfers from AED '+fm(APPROVE)+' need branch approval.</p></div>';
+ },
+ Loans:function(){
+  var mine=D.loans.filter(function(l){return l.cid===S.user.id});
+  return '<div class="card" style="max-width:480px"><h2 style="margin-top:0">Apply for a loan</h2><label for="lamt">Amount (AED)</label><input id="lamt" type="number" min="1000" oninput="calcEmi()"><label for="lm">Term</label><select id="lm" onchange="calcEmi()"><option value="12">12 months</option><option value="24" selected>24 months</option><option value="36">36 months</option><option value="60">60 months</option></select>'+
+  '<p id="emi" class="mute">Enter an amount to see the monthly payment.</p><button class="btn" onclick="applyLoan()">Submit application</button></div><h2>Your loans</h2><div class="card">'+
+  (mine.length?'<div class="wrap"><table><tr><th>#</th><th>Amount</th><th>Term</th><th>Monthly</th><th>Status</th></tr>'+mine.map(function(l){return '<tr><td>'+l.id+'</td><td>AED '+fm(l.amt)+'</td><td>'+l.m+' mo</td><td>AED '+fm(emi(l.amt,l.m))+'</td><td>'+tag(l.st)+'</td></tr>'}).join("")+'</table></div>':'<p class="mute">No loans yet. Use the form to apply.</p>')+'</div>';
+ },
+ Overview:function(){
+  var dep=D.acc.reduce(function(s,a){return s+a.bal},0),pl=D.loans.filter(function(l){return l.st==="Pending"}).length,pt=D.pend.filter(function(p){return p.st==="Pending"}).length;
+  return '<div class="grid"><div class="card"><div class="mute">Total deposits</div><div class="big">AED '+fm(dep)+'</div></div><div class="card"><div class="mute">Customers</div><div class="big">'+D.cust.length+'</div></div><div class="card"><div class="mute">Awaiting approval</div><div class="big">'+(pl+pt)+'</div><div class="mute">'+pt+' transfers, '+pl+' loans</div></div></div><h2>Latest transactions</h2><div class="card">'+txTable(D.tx.slice(0,8))+'</div>';
+ },
+ Customers:function(){
+  return '<div class="card"><div class="wrap"><table><tr><th>Name</th><th>KYC</th><th>Accounts</th><th>Status</th><th>Actions</th></tr>'+D.cust.map(function(c){return '<tr><td>'+esc(c.name)+'</td><td>'+tag(c.kyc)+'</td><td>'+D.acc.filter(function(a){return a.cid===c.id}).map(function(a){return a.no}).join(", ")+'</td><td>'+(c.frozen?'<span class="tag bad">Frozen</span>':'<span class="tag ok">Active</span>')+'</td><td>'+(c.kyc!=="Verified"?'<button class="btn sm" onclick="kyc('+c.id+')">Verify ID</button>':'')+'<button class="btn sm ghost" onclick="freeze('+c.id+')">'+(c.frozen?"Unfreeze":"Freeze")+'</button></td></tr>'}).join("")+'</table></div></div>'+
+  '<h2>Register a customer</h2><div class="card" style="max-width:480px"><label for="cn">Full name</label><input id="cn"><label for="cd">Opening deposit (AED)</label><input id="cd" type="number" min="0"><button class="btn" onclick="regCust()">Register customer</button></div>';
+ },
+ Approvals:function(){
+  var pt=D.pend.filter(function(p){return p.st==="Pending"}),pl=D.loans.filter(function(l){return l.st==="Pending"});
+  var t=pt.length?'<div class="wrap"><table><tr><th>#</th><th>From</th><th>To</th><th>Amount</th><th></th></tr>'+pt.map(function(p){return '<tr><td>'+p.id+'</td><td>'+p.from+'</td><td>'+p.to+'</td><td>AED '+fm(p.amt)+'</td><td><button class="btn sm" onclick="decideTx('+p.id+',true)">Approve</button><button class="btn sm bad" onclick="decideTx('+p.id+',false)">Reject</button></td></tr>'}).join("")+'</table></div>':'<p class="mute">No transfers waiting. Large customer transfers will appear here.</p>';
+  var l=pl.length?'<div class="wrap"><table><tr><th>#</th><th>Customer</th><th>Amount</th><th>Term</th><th></th></tr>'+pl.map(function(x){return '<tr><td>'+x.id+'</td><td>'+esc(custOf(x.cid).name)+'</td><td>AED '+fm(x.amt)+'</td><td>'+x.m+' mo</td><td><button class="btn sm" onclick="decideLoan('+x.id+',true)">Approve</button><button class="btn sm bad" onclick="decideLoan('+x.id+',false)">Reject</button></td></tr>'}).join("")+'</table></div>':'<p class="mute">No loan applications waiting.</p>';
+  return '<h2 style="margin-top:0">Large transfers</h2><div class="card">'+t+'</div><h2>Loan applications</h2><div class="card">'+l+'</div>';
+ },
+ Reports:function(){
+  var types={};D.acc.forEach(function(a){types[a.type]=(types[a.type]||0)+a.bal});
+  var book=D.loans.filter(function(l){return l.st==="Approved"}).reduce(function(s,l){return s+l.amt},0);
+  var vol=D.tx.reduce(function(s,t){return s+t.amt},0);
+  return '<div class="grid"><div class="card"><div class="mute">Transactions</div><div class="big">'+D.tx.length+'</div><div class="mute">Volume AED '+fm(vol)+'</div></div><div class="card"><div class="mute">Loan book</div><div class="big">AED '+fm(book)+'</div></div><div class="card"><div class="mute">KYC pending</div><div class="big">'+D.cust.filter(function(c){return c.kyc!=="Verified"}).length+'</div></div></div>'+
+  '<h2>Deposits by account type</h2><div class="card"><div class="wrap"><table><tr><th>Type</th><th>Balance (AED)</th></tr>'+Object.keys(types).map(function(k){return '<tr><td>'+k+'</td><td>'+fm(types[k])+'</td></tr>'}).join("")+'</table></div></div>';
+ },
+ Audit:function(){
+  return '<div class="card"><div class="wrap"><table><tr><th>Time</th><th>User</th><th>Action</th></tr>'+(D.audit.length?D.audit.map(function(a){return '<tr><td>'+a.t+'</td><td>'+esc(a.who)+'</td><td>'+esc(a.a)+'</td></tr>'}).join(""):'<tr><td colspan="3" class="mute">Nothing logged yet. Actions you take appear here.</td></tr>')+'</table></div></div>';
+ }
+};
+var TABS={customer:["Accounts","Transfer","Loans"],staff:["Overview","Customers","Approvals","Reports","Audit"]};
+function go(t){S.tab=t;S.msg=null;render()}
+function render(){
+ var r=document.getElementById("root");
+ if(!S.user){
+  r.innerHTML='<div class="login"><h1>SmartBank</h1><p class="mute">One platform for accounts, payments and loans. This is a working prototype with sample data.</p>'+(S.msg?'<div class="toast err">'+S.msg.t+'</div>':'')+
+  (S.step===0?'<div class="card"><h3>Sign in as</h3><div class="sp"><button class="btn" onclick="pickRole(\'customer\')">Customer (Aisha)</button><button class="btn ghost" onclick="pickRole(\'staff\')">Bank staff</button></div></div>':
+  '<div class="card"><h3>Two-step check</h3><label for="otp">One-time code (demo code: 123456)</label><input id="otp" inputmode="numeric" maxlength="6" autofocus><div class="sp"><button class="btn" onclick="verify()">Verify and sign in</button><button class="btn ghost" onclick="S.step=0;render()">Back</button></div></div>')+'</div>';
+  return;
+ }
+ var tabs=TABS[S.role];
+ r.innerHTML='<div class="top"><b>SmartBank</b><span>'+esc(S.user.name)+'</span><button onclick="signOut()">Sign out</button></div><nav>'+tabs.map(function(t){return '<button class="'+(t===S.tab?"on":"")+'" onclick="go(\''+t+'\')">'+t+'</button>'}).join("")+'</nav><main>'+(S.msg?'<div class="toast '+S.msg.k+'" role="status">'+S.msg.t+'</div>':'')+V[S.tab]()+'</main>';
+}
+render();
+</script>
+</body>
+</html>
